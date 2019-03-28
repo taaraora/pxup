@@ -18,6 +18,9 @@
 - name: Create /etc/pwx
   file: path=/etc/pwx state=directory
 
+- name: Create /var/lib/kubelet/plugins/com.openstorage.pxd
+  file: path=/var/lib/kubelet/plugins/com.openstorage.pxd state=directory
+
 - name: Create /var/lib/portworx
   file: path=/var/lib/portworx state=directory
 
@@ -131,8 +134,12 @@
   when: oci and not auth and not px_runc_rules.stat.exists
 
 - name: Install px from oci image
-  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -jwt_issuer=openstorage.io -jwt_shared_secret={{ shared_secret }} -auth_system_key=mysecret -A {{ oci_switches }}
+  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -jwt_issuer=openstorage.io -A {{ oci_switches }}
   when: oci and auth and not px_runc_rules.stat.exists
+  environment:
+    PORTWORX_AUTH_JWT_SHAREDSECRET: "{{ shared_secret }}"
+    PORTWORX_AUTH_SYSTEM_KEY: "{{ shared_secret }}"
+    CSI_ENDPOINT: "unix:///var/lib/kubelet/plugins/com.openstorage.pxd/csi.sock"
 
 - name: Systemctl start portworx
   service: name=portworx state=restarted enabled=yes
