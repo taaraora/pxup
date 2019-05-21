@@ -9,11 +9,12 @@ MEMORY = 4096
 CPUS = 2
 
 ### TYPE HERE A PREFIX ###
-PREFIX = "px" 
+PREFIX = "luis" 
 
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
     config.vm.box = "centos/7"
+	config.vm.synced_folder '.', '/vagrant', disabled: true
 
     # Override
     config.vm.provider :libvirt do |v,override|
