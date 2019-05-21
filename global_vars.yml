@@ -1,6 +1,6 @@
 ---
 pximage: portworx/oci-monitor:2.1.1
-pullimage: false
+pullimage: true
 oci: true
 auth: true
 oci_switches: -enable-shared-v4
