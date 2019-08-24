@@ -11,10 +11,6 @@
 - name: disable selinux
   selinux: state=disabled
 
-- name: disable of selinux - now
-  command: setenforce 0
-  ignore_errors: True
-
 - name: Create /etc/pwx
   file: path=/etc/pwx state=directory
 
@@ -41,29 +37,72 @@
   lineinfile: dest=/etc/pwx/config.json regexp="etcd:http://" line="\"etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379\"" state=present
   when: not oci
 
+- name: install epel
+  yum: name=epel-release state=present disable_gpg_check=yes
+
 - name: install utility programs
   yum: name={{ item }} state=present disable_gpg_check=yes
-  with_items:
-    - wget
-    - ntp
-    - screen
-    - epel-release
-    - vim
-    - iptables
-    - iptables-utils
-    - iptables-services
-    - ncurses-term
-    - etcd
-    - kernel-devel
-    - kernel-headers
+  vars:
+    item:
+      - wget
+      - ntp
+      - screen
+      - epel-release
+      - vim
+      - iptables
+      - iptables-utils
+      - iptables-services
+      - ncurses-term
+      - etcd
+      - python
+      - python-devel
+      - kernel-devel
+      - kernel-headers
+      - python36
+      - openssl
+      - openssl-libs
+      - openssl-devel
+      - python-crypto
+      - python-pip
+      - jq
+      - lvm2
+      - yum-utils
+      - device-mapper-persistent-data
 
-- name: install epel  utility programs
-  yum: name={{ item }} state=present disable_gpg_check=yes
-  with_items:
-    - jq
-    - lvm2
-    - yum-utils
-    - device-mapper-persistent-data
+- name: install python packages
+  pip:
+    name:
+      - cryptography
+
+- name: copy cert key
+  copy: src=insecure_ca.key owner=root group=root dest=/etc/ssl/insecure_ca.key
+
+- name: copy ca
+  copy: src=insecure_ca.crt owner=root group=root dest=/etc/pwx/insecure_ca.crt
+
+- name: create server key
+  command: openssl genrsa -out /etc/pwx/server.key 2048
+  args:
+    creates: /etc/pwx/server.key
+
+- name: create server csr
+  command: openssl req -new -key /etc/pwx/server.key -out /etc/pwx/server.csr -batch
+  args:
+    creates: /etc/pwx/server.csr
+
+- name: create server csr
+  openssl_csr:
+    path: /etc/pwx/server.csr
+    privatekey_path: /etc/pwx/server.key
+    common_name: "{{ inventory_hostname }}"
+
+- name: create certs
+  openssl_certificate:
+    path: /etc/pwx/server.crt
+    csr_path: /etc/pwx/server.csr
+    ownca_path: /etc/pwx/insecure_ca.crt
+    ownca_privatekey_path: /etc/ssl/insecure_ca.key
+    provider: ownca
 
 - name: remove all old docker
   yum: name={{ item }} state=removed disable_gpg_check=yes
@@ -94,7 +133,7 @@
     - etcd
 
 - name: copy docker image to host
-  copy: src=px.img owner=root group=root dest=/root force=yes 
+  copy: src=px.img owner=root group=root dest=/root force=yes
   when: not pullimage
 
 - name: install image
@@ -139,7 +178,7 @@
     CSI_ENDPOINT: "unix:///var/lib/kubelet/plugins/pxd.portworx.com/csi.sock"
 
 - name: Install px from oci image
-  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -jwt_issuer=openstorage.io -A {{ oci_switches }}
+  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -jwt_issuer=openstorage.io -A -apirootca=/etc/pwx/insecure_ca.crt -apicert=/etc/pwx/server.crt -apikey=/etc/pwx/server.key  {{ oci_switches }}
   when: oci and auth and not px_runc_rules.stat.exists
   environment:
     PORTWORX_AUTH_JWT_SHAREDSECRET: "{{ shared_secret }}"

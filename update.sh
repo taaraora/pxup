@@ -1,11 +1,11 @@
 #!/bin/sh
 
-. utils.sh
+. ./utils.sh
 
 pullimage=$(getvar pullimage)
 pximage=$(getvar pximage)
 
-if [ "pullimage" = "false" ] ; then
+if [ $pullimage = "false" ] ; then
 	docker save ${pximage} > $PWD/roles/common/files/px.img
 fi
 
