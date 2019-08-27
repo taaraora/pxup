@@ -20,10 +20,7 @@ cloudproviders:
 # Usage
 
 * One time setup: `./bootstrap.sh`
-* Set the name of your image name in `global_vars.yaml` 
-
-An etcd server will be setup in node0 and configured in config.json. If you would like your
-own etcd server endpoints you can adjust `roles/common/files/config.json`.
+* Set the name of your image name in `global_vars.yaml`
 
 ### Build the cluster
 
