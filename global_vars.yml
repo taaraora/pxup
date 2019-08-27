@@ -1,5 +1,5 @@
 ---
-pximage: quay.io/porx/porxsdk:master
+pximage: quay.io/porx/porxsdk:1
 pullimage: false
 oci: true
 auth: true

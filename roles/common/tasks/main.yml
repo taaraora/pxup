@@ -86,11 +86,6 @@
     creates: /etc/pwx/server.key
 
 - name: create server csr
-  command: openssl req -new -key /etc/pwx/server.key -out /etc/pwx/server.csr -batch
-  args:
-    creates: /etc/pwx/server.csr
-
-- name: create server csr
   openssl_csr:
     path: /etc/pwx/server.csr
     privatekey_path: /etc/pwx/server.key
@@ -178,7 +173,7 @@
     CSI_ENDPOINT: "unix:///var/lib/kubelet/plugins/pxd.portworx.com/csi.sock"
 
 - name: Install px from oci image
-  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -jwt_issuer=openstorage.io -A -apirootca=/etc/pwx/insecure_ca.crt -apicert=/etc/pwx/server.crt -apikey=/etc/pwx/server.key  {{ oci_switches }}
+  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -jwt_issuer=openstorage.io -A -apirootca=/etc/pwx/insecure_ca.crt -apicert=/etc/pwx/server.crt -apikey=/etc/pwx/server.key  -apidisclientauth {{ oci_switches }}
   when: oci and auth and not px_runc_rules.stat.exists
   environment:
     PORTWORX_AUTH_JWT_SHAREDSECRET: "{{ shared_secret }}"

@@ -9,7 +9,7 @@ MEMORY = 4096
 CPUS = 2
 
 ### TYPE HERE A PREFIX ###
-PREFIX = "luis" 
+PREFIX = "luis"
 
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
