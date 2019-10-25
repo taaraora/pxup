@@ -1,15 +1,26 @@
-#- name: update
-#  yum:
-#    name: '*'
-#    state: latest
+- name: disable selinux
+  selinux: state=disabled
+
+- name: update kernels
+  yum: name={{ packages }} state=latest
+  vars:
+    packages:
+      - kernel
+      - kernel-devel
+      - kernel-headers
+  register: kernel
+
+- name: update kernels
+  yum: name='*' state=latest
+
+- name: reboot if kernels where updated
+  reboot:
+  when: kernel.changed
 
 - name: build hosts file
   lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_eth1.ipv4.address }} {{item}}" state=present
   when: hostvars[item].ansible_eth1.ipv4.address is defined
   with_items: "{{ groups['all'] }}"
-
-- name: disable selinux
-  selinux: state=disabled
 
 - name: Create /etc/pwx
   file: path=/etc/pwx state=directory
@@ -28,14 +39,6 @@
 
 - name: Create /minio
   file: path=/minio state=directory
-
-- name: Install px config
-  copy: src=config.json owner=root group=root dest=/etc/pwx/config.json force=yes
-  when: not oci
-
-- name: Update etcd in px config
-  lineinfile: dest=/etc/pwx/config.json regexp="etcd:http://" line="\"etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379\"" state=present
-  when: not oci
 
 - name: install epel
   yum: name=epel-release state=present disable_gpg_check=yes
@@ -76,20 +79,24 @@
 
 - name: copy cert key
   copy: src=insecure_ca.key owner=root group=root dest=/etc/ssl/insecure_ca.key
+  when: auth
 
 - name: copy ca
   copy: src=insecure_ca.crt owner=root group=root dest=/etc/pwx/insecure_ca.crt
+  when: auth
 
 - name: create server key
   command: openssl genrsa -out /etc/pwx/server.key 2048
   args:
     creates: /etc/pwx/server.key
+  when: auth
 
 - name: create server csr
   openssl_csr:
     path: /etc/pwx/server.csr
     privatekey_path: /etc/pwx/server.key
     common_name: "{{ inventory_hostname }}"
+  when: auth
 
 - name: create certs
   openssl_certificate:
@@ -98,6 +105,7 @@
     ownca_path: /etc/pwx/insecure_ca.crt
     ownca_privatekey_path: /etc/ssl/insecure_ca.key
     provider: ownca
+  when: auth
 
 - name: remove all old docker
   yum: name={{ item }} state=removed disable_gpg_check=yes
@@ -138,24 +146,6 @@
 - name: Pulling pximage
   command: docker pull {{ pximage }}
   when: pullimage
-
-- name: determine if it is running already
-  command: docker inspect px-dev
-  register: inspect_result
-  ignore_errors: True
-  when: not oci
-
-- name: stop px-dev
-  command: docker stop px-dev
-  when: inspect_result is succeeded and not oci
-
-- name: rm px-dev
-  command: docker rm px-dev
-  when: inspect_result is succeeded and not oci
-
-- name: Installing and starting Px container. This may take a while
-  command: docker run --name px-dev -d --net=host --privileged=true -e PORTWORX_AUTH_SYSTEM_KEY=mysecret -e PORTWORX_AUTH_JWT_SHAREDSECRET=mysecret -e PORTWORX_AUTH_JWT_ISSUER=openstorage.io -e PORTWORX_AUTH_USERNAME_CLAIM=email -v /etc/hosts:/etc/hosts:ro -v /etc/resolv.conf:/etc/resolv.conf:ro -v /var/lib/portworx:/var/lib/portworx -v /mnt:/mnt:shared -v /run/docker:/run/docker -v /var/lib/osd:/var/lib/osd:shared -v /dev:/dev -v /etc/pwx:/etc/pwx -v /opt/pwx/bin:/export_bin -v /usr/src:/usr/src -v /lib/modules:/lib/modules -v /run/lvm:/run/lvm -v /var/run/docker.sock:/var/run/docker.sock  -v /var/cores:/var/cores -v /usr/src:/usr/src -v /lib/modules:/lib/modules -v /opt/pwx:/opt/pwx -v /etc/systemd/system:/etc/systemd/system -v /host_proc/1/ns:/host_proc/1/ns {{ pximage }}
-  when: not oci
 
 - name: check if px-runc is installed
   stat:

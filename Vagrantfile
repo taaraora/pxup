@@ -5,7 +5,7 @@
 # If you change the number of drives, you will need to update roles/common/files/config.json
 NODES = 3
 DISKS = 3
-MEMORY = 4096
+MEMORY = 8196
 CPUS = 2
 
 ### TYPE HERE A PREFIX ###
