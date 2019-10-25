@@ -154,17 +154,16 @@
 
 - name: Installing OCI image
   command: docker run --entrypoint /runc-entry-point.sh --rm -i --privileged=true -v /opt/pwx:/opt/pwx -v /etc/pwx:/etc/pwx {{ pximage }} --upgrade
-  when: oci
 
 - name: Install px from oci image
   command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -A {{ oci_switches }}
-  when: oci and not auth and not px_runc_rules.stat.exists
+  when: not auth and not px_runc_rules.stat.exists
   environment:
     CSI_ENDPOINT: "unix:///var/lib/kubelet/plugins/pxd.portworx.com/csi.sock"
 
 - name: Install px from oci image
   command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -jwt_issuer=openstorage.io -A -apirootca=/etc/pwx/insecure_ca.crt -apicert=/etc/pwx/server.crt -apikey=/etc/pwx/server.key  -apidisclientauth {{ oci_switches }}
-  when: oci and auth and not px_runc_rules.stat.exists
+  when: auth and not px_runc_rules.stat.exists
   environment:
     PORTWORX_AUTH_JWT_SHAREDSECRET: "{{ shared_secret }}"
     PORTWORX_AUTH_SYSTEM_KEY: "{{ shared_secret }}"
@@ -172,7 +171,6 @@
 
 - name: Systemctl start portworx
   service: name=portworx state=restarted enabled=yes
-  when: oci
 
 - name: determine if minio is running already
   command: docker inspect minio
