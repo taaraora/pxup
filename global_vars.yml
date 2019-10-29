@@ -5,3 +5,4 @@ oci: true
 auth: true
 oci_switches: -enable-shared-v4
 shared_secret: mysecret
+cache: true

@@ -5,8 +5,9 @@
 # If you change the number of drives, you will need to update roles/common/files/config.json
 NODES = 3
 DISKS = 3
-MEMORY = 4096
+MEMORY = 8192
 CPUS = 2
+cache = ENV['cache']
 
 ### TYPE HERE A PREFIX ###
 PREFIX = "luis"
@@ -29,10 +30,16 @@ Vagrant.configure("2") do |config|
 
             (0..DISKS-1).each do |d|
                 node.vm.provider :libvirt do  |lv|
-                    driverletters = ('b'..'z').to_a
+                    driverletters = ('b'..'y').to_a
                     lv.storage :file, :device => "vd#{driverletters[d]}", :path => "#{PREFIX}-disk-#{i}-#{d}.disk", :size => '1024G'
                     lv.memory = MEMORY
                     lv.cpus = CPUS
+                end
+            end
+
+            if cache == true
+                node.vm.provider :libvirt do  |lv|
+                    lv.storage :file, :device => "vdz", :path => "#{PREFIX}-disk-cache-z.disk", :size => '1024G'
                 end
             end
 
