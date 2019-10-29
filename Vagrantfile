@@ -1,16 +1,25 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 #
+require 'yaml'
 
-# If you change the number of drives, you will need to update roles/common/files/config.json
-NODES = 3
-DISKS = 3
-MEMORY = 8192
-CPUS = 2
-cache = ENV['cache']
+if File.file?('global_vars.yml') then
+  vagrant_variable_filename='global_vars.yml'
+else
+  vagrant_variable_filename='global_vars.yml.sample'
+end
 
-### TYPE HERE A PREFIX ###
-PREFIX = "luis"
+config_file=File.expand_path(File.join(File.dirname(__FILE__), vagrant_variable_filename))
+
+settings=YAML.load_file(config_file)
+
+CACHE = settings['cache']
+PREFIX = settings['prefix']
+NODES = settings['nodes']
+DISKS = settings['disks']
+MEMORY = settings['memory']
+CPUS = settings['cpus']
+NET_PREFIX = settings['private_network_prefix']
 
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
@@ -23,23 +32,24 @@ Vagrant.configure("2") do |config|
     end
 
     # Make the glusterfs cluster, each with DISKS number of drives
+    driveLetters = ('b'..'z').to_a
     (0..NODES-1).each do |i|
         config.vm.define "#{PREFIX}-node#{i}" do |node|
             node.vm.hostname = "#{PREFIX}-node#{i}"
-            node.vm.network :private_network, ip: "192.168.10.10#{i}"
+            node.vm.network :private_network, ip: "#{NET_PREFIX}#{i}"
 
-            (0..DISKS-1).each do |d|
+            (0..DISKS-1).each do |discOrdinal|
                 node.vm.provider :libvirt do  |lv|
-                    driverletters = ('b'..'y').to_a
-                    lv.storage :file, :device => "vd#{driverletters[d]}", :path => "#{PREFIX}-disk-#{i}-#{d}.disk", :size => '1024G'
+                    lv.storage :file, :device => "vd#{driveLetters[discOrdinal]}", :path => "#{PREFIX}-disk-#{i}-#{discOrdinal}.disk", :size => '1024G'
                     lv.memory = MEMORY
                     lv.cpus = CPUS
                 end
             end
 
-            if cache == true
+            if CACHE
                 node.vm.provider :libvirt do  |lv|
-                    lv.storage :file, :device => "vdz", :path => "#{PREFIX}-disk-cache-z.disk", :size => '1024G'
+                    latestDriveOrdinal = DISKS
+                    lv.storage :file, :device => "vd#{driveLetters[latestDriveOrdinal]}", :path => "#{PREFIX}-#{i}-disk-cache-#{latestDriveOrdinal}.disk", :size => '1024G'
                 end
             end
 

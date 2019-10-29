@@ -11,6 +11,35 @@
 - name: disable selinux
   selinux: state=disabled
 
+# TODO: as long as new kernel should be downloaded from remote repo, we should add retries and timeout here
+- name: Upgrade Kernel from mirror for cache
+  yum:
+    state: present
+    name: http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-4.20.13-1.el7.elrepo.x86_64.rpm
+  when: cache
+
+# work only when cache disk is /dev/vde, should be refactored for more configurable way
+# this task creates udev rule which sets vde disk type to non rotational
+- name: make cache disk look like non-magnetic
+  lineinfile:
+    create: true
+    path: /etc/udev/rules.d/98-vde.rules
+    line: 'ACTION=="add|change", SUBSYSTEM=="block", KERNEL=="vde", ATTR{queue/rotational}:="0"'
+  when: cache
+
+- name: Set default boot menu entry for grub
+  command: grub2-set-default 0
+  when: cache
+
+- name: Regenerate grub config file
+  command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when: cache
+
+- name: Restart server after kernel upgrade
+  reboot:
+    reboot_timeout: 180
+  when: cache
+
 - name: Create /etc/pwx
   file: path=/etc/pwx state=directory
 
@@ -168,13 +197,20 @@
 
 - name: Install px from oci image
   command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -A {{ oci_switches }}
-  when: oci and not auth and not px_runc_rules.stat.exists
+  when: oci and not auth and not px_runc_rules.stat.exists and not cache
+  environment:
+    CSI_ENDPOINT: "unix:///var/lib/kubelet/plugins/pxd.portworx.com/csi.sock"
+
+# cache drive name depends on number of disks in case when you have 3 discs and enable cache script creates one more disk with name vde which basically is used here
+- name: Install px from oci image with cache
+  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -cache /dev/vde -A {{ oci_switches }}
+  when: oci and not auth and not px_runc_rules.stat.exists and cache
   environment:
     CSI_ENDPOINT: "unix:///var/lib/kubelet/plugins/pxd.portworx.com/csi.sock"
 
 - name: Install px from oci image
   command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -jwt_issuer=openstorage.io -A -apirootca=/etc/pwx/insecure_ca.crt -apicert=/etc/pwx/server.crt -apikey=/etc/pwx/server.key  -apidisclientauth {{ oci_switches }}
-  when: oci and auth and not px_runc_rules.stat.exists
+  when: oci and auth and not px_runc_rules.stat.exists and not cache
   environment:
     PORTWORX_AUTH_JWT_SHAREDSECRET: "{{ shared_secret }}"
     PORTWORX_AUTH_SYSTEM_KEY: "{{ shared_secret }}"
@@ -209,3 +245,8 @@
 - name: login to secret kvdb
   command: /opt/pwx/bin/pxctl secrets kvdb login
 
+- name: make pxctl available for execution
+  file:
+    path: /opt/pwx/bin
+    mode: '0755'
+    recurse: yes

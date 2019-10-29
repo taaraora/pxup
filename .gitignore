@@ -1,2 +1,4 @@
 .vagrant
 kubeconfig.conf
+.idea/
+global_vars.yml

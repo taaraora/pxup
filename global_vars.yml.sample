@@ -1,0 +1,15 @@
+---
+# If you change the number of drives, you will need to update roles/common/files/config.json
+prefix: dmts
+nodes: 3
+disks: 3
+memory: 8192
+cpus: 2
+private_network_prefix: '192.168.30.10'
+pximage: quay.io/porx/porxsdkdmts:1
+pullimage: false
+oci: true
+auth: false
+oci_switches: -enable-shared-v4
+shared_secret: mysecret
+cache: true

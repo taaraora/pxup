@@ -19,30 +19,40 @@ cloudproviders:
 
 # Usage
 
-* One time setup: `./bootstrap.sh`
-* Set the name of your image name in `global_vars.yaml`
+* One time setup: `make bootstrap` which installs needed dependencies for your vagrant installation (ot doesn't install Vagrant itself)
+* One time config generation `make config-init`
+* Set the name and tag of your image, VMs name prefix, network range, etc... at `global_vars.yaml`
 
 ### Build the cluster
 
-* Run `./up.sh` and enjoy
+* Run `make up` and enjoy
 
 ### Redeploy
 
 Once the system is running, to redeploy a new version type:
 
 ```
-$ ./update.sh
+$ make update
 ```
 
 # Infrastructure
 
-To increase the number of nodes, disks, or memory edit the following values
-in the Vagrantfile:
+To increase the number of nodes, disks, or memory, etc... edit the corresponded value
+in the global_vars.yml:
 
 ```
-NODES = 3
-DISKS = 3
-MEMORY = 4096
-CPUS = 2
+prefix: dmts
+nodes: 3
+disks: 3
+memory: 8192
+cpus: 2
+private_network_prefix: '192.168.30.10'
+pximage: quay.io/porx/porxsdkdmts:1
+pullimage: false
+oci: true
+auth: false
+oci_switches: -enable-shared-v4
+shared_secret: mysecret
+cache: true
 ```
 
