@@ -6,7 +6,7 @@
  },
  "dataiface": "",
  "kvdb": [
-   "etcd:http://192.168.10.100:2379"
+   "etcd:http://192.168.30.100:2379"
  ],
  "mgtiface": "",
  "scheduler": "none",
