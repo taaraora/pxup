@@ -1,4 +1,5 @@
 .vagrant
 kubeconfig.conf
+roles/common/files/px.img
 .idea/
 global_vars.yml
