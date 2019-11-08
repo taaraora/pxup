@@ -11,11 +11,15 @@
 - name: disable selinux
   selinux: state=disabled
 
-# TODO: as long as new kernel should be downloaded from remote repo, we should add retries and timeout here
+- name: copy kernel package
+  copy: src=kernel-ml-4.20.13-1.el7.elrepo.x86_64.rpm owner=root group=root dest=/var/tmp/kernel-ml-4.20.13-1.el7.elrepo.x86_64.rpm
+  when: cache
+
+# TODO: should be implemented as separate box with this version of kernel
 - name: Upgrade Kernel from mirror for cache
   yum:
     state: present
-    name: http://mirror.rc.usf.edu/compute_lock/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-4.20.13-1.el7.elrepo.x86_64.rpm
+    name: /var/tmp/kernel-ml-4.20.13-1.el7.elrepo.x86_64.rpm
   when: cache
 
 # work only when cache disk is /dev/vde, should be refactored for more configurable way
