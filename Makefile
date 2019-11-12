@@ -1,7 +1,7 @@
 
 define CONFIG_INIT
 	@echo "Initializing config..."
-	if [ ! -f config.yaml ]; \
+	if [ ! -f global_vars.yml ]; \
 	then \
 		cp "global_vars.yml.sample" "global_vars.yml"; \
 	fi

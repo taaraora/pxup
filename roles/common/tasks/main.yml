@@ -99,7 +99,7 @@
 
 # cache drive name depends on number of disks in case when you have 3 discs and enable cache script creates one more disk with name vde which basically is used here
 - name: Install px from oci image with cache
-  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -cache /dev/vde -A {{ oci_switches }}
+  command: /opt/pwx/bin/px-runc  install -c "pxup-cluster" -k etcd:http://{{ hostvars[groups['all'][0]].ansible_eth1.ipv4.address }}:2379 -cache /dev/vde -s /dev/vdb -s /dev/vdc -s /dev/vdd {{ oci_switches }}
   when: oci and not auth and not px_runc_rules.stat.exists and cache
   environment:
     CSI_ENDPOINT: "unix:///var/lib/kubelet/plugins/pxd.portworx.com/csi.sock"

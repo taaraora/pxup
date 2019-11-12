@@ -9,6 +9,13 @@ set -o pipefail
 pullimage=$(getvar pullimage)
 pximage=$(getvar pximage)
 
+if vagrant box list | grep -q "taaraora/centos7"; then
+  echo "taaraora/centos7 box is already added"
+else
+  echo "taaraora/centos7 box not found"
+  vagrant box add --clean taaraora/centos7
+fi
+
 if [ $pullimage = "false" ] ; then
 	echo "Copying docker ${pximage} ..."
 	docker save ${pximage} > $PWD/roles/common/files/px.img
