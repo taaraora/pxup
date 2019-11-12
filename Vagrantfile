@@ -23,7 +23,7 @@ NET_PREFIX = settings['private_network_prefix']
 
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
-    config.vm.box = "centos/7"
+    config.vm.box = "taaraora/centos7"
 	config.vm.synced_folder '.', '/vagrant', disabled: true
 
     # Override
