@@ -13,3 +13,5 @@ auth: false
 oci_switches: -enable-shared-v4
 shared_secret: mysecret
 cache: true
+# change this to build-box.yaml if you need to provision vm for box
+playbook: site.yml

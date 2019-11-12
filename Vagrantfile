@@ -20,6 +20,7 @@ DISKS = settings['disks']
 MEMORY = settings['memory']
 CPUS = settings['cpus']
 NET_PREFIX = settings['private_network_prefix']
+PLAYBOOK = settings['playbook']
 
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
@@ -58,7 +59,7 @@ Vagrant.configure("2") do |config|
                 # information on available options.
                 node.vm.provision :ansible do |ansible|
                     ansible.limit = "all"
-                    ansible.playbook = "site.yml"
+                    ansible.playbook = PLAYBOOK
                     ansible.groups = {
                         "nodes" => (0..NODES-1).map {|j| "#{PREFIX}-node#{j}"},
                     }

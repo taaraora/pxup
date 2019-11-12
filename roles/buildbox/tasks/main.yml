@@ -1,0 +1,82 @@
+
+- name: disable selinux
+  selinux: state=disabled
+
+- name: copy kernel package
+  copy: src=kernel-ml-4.20.13-1.el7.elrepo.x86_64.rpm owner=root group=root dest=/var/tmp/kernel-ml-4.20.13-1.el7.elrepo.x86_64.rpm
+  when: cache
+
+# TODO: should be implemented as separate box with this version of kernel
+- name: Upgrade Kernel from mirror for cache
+  yum:
+    state: present
+    name: /var/tmp/kernel-ml-4.20.13-1.el7.elrepo.x86_64.rpm
+  when: cache
+
+- name: Set default boot menu entry for grub
+  command: grub2-set-default 0
+  when: cache
+
+- name: Regenerate grub config file
+  command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  when: cache
+
+- name: Restart server after kernel upgrade
+  reboot:
+    reboot_timeout: 180
+  when: cache
+
+- name: install epel
+  yum: name=epel-release state=present disable_gpg_check=yes
+
+- name: install utility programs
+  yum: name={{ item }} state=present disable_gpg_check=yes
+  vars:
+    item:
+      - wget
+      - ntp
+      - screen
+      - epel-release
+      - vim
+      - iptables
+      - iptables-utils
+      - iptables-services
+      - ncurses-term
+      - etcd
+      - python
+      - python-devel
+      - kernel-devel
+      - kernel-headers
+      - python36
+      - openssl
+      - openssl-libs
+      - openssl-devel
+      - python-crypto
+      - python-pip
+      - jq
+      - lvm2
+      - yum-utils
+      - device-mapper-persistent-data
+
+- name: install python packages
+  pip:
+    name:
+      - cryptography
+
+- name: remove all old docker
+  yum: name={{ item }} state=removed disable_gpg_check=yes
+  with_items:
+    - docker
+    - docker-client
+    - docker-client-latest
+    - docker-common
+    - docker-latest
+    - docker-latest-logrotate
+    - docker-logrotate
+    - docker-engine
+
+- name: install docker ce yum repo
+  command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: install docker ce
+  yum: name=docker-ce state=present disable_gpg_check=yes
