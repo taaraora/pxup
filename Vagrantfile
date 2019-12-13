@@ -42,7 +42,7 @@ Vagrant.configure("2") do |config|
 
             (0..DISKS-1).each do |discOrdinal|
                 node.vm.provider :libvirt do  |lv|
-                    lv.storage :file, :device => "vd#{driveLetters[discOrdinal]}", :path => "#{PREFIX}-disk-#{i}-#{discOrdinal}.disk", :size => '#{DISK_SIZE}'
+                    lv.storage :file, :device => "vd#{driveLetters[discOrdinal]}", :path => "#{PREFIX}-disk-#{i}-#{discOrdinal}.disk", :size => DISK_SIZE
                     lv.memory = MEMORY
                     lv.cpus = CPUS
                 end
@@ -51,7 +51,7 @@ Vagrant.configure("2") do |config|
             if CACHE
                 node.vm.provider :libvirt do  |lv|
                     latestDriveOrdinal = DISKS
-                    lv.storage :file, :device => "vd#{driveLetters[latestDriveOrdinal]}", :path => "#{PREFIX}-#{i}-disk-cache-#{latestDriveOrdinal}.disk", :size => '#{DISK_SIZE}'
+                    lv.storage :file, :device => "vd#{driveLetters[latestDriveOrdinal]}", :path => "#{PREFIX}-#{i}-disk-cache-#{latestDriveOrdinal}.disk", :size => DISK_SIZE
                 end
             end
 
