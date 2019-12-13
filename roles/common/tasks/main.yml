@@ -139,6 +139,10 @@
 
 - name: login to secret kvdb
   command: /opt/pwx/bin/pxctl secrets kvdb login
+  register: result
+  retries: 5
+  delay: 10
+  until: result is not failed
 
 - name: make pxctl available for execution
   file:

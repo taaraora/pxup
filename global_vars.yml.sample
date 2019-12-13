@@ -3,7 +3,7 @@
 prefix: dmts
 nodes: 3
 disks: 3
-disk_size: 1024G
+disk_size: '1024G'
 memory: 8192
 cpus: 2
 private_network_prefix: '192.168.30.10'
