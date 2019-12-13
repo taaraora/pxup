@@ -135,7 +135,11 @@
   wait_for: timeout=600 port=9001
 
 - name: setup trial license
-  command: timeout 30 sh -c 'until /opt/pwx/bin/pxctl license act trial > /dev/null 2>&1; do sleep 1 ; done'
+  command: /opt/pwx/bin/pxctl license act trial
+  register: result
+  retries: 5
+  delay: 30
+  until: result is not failed
 
 - name: login to secret kvdb
   command: /opt/pwx/bin/pxctl secrets kvdb login
